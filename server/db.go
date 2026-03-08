@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"log"
+	"os"
 	"time"
 
+	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
@@ -12,7 +14,15 @@ import (
 var ProductsCollection *mongo.Collection
 
 func ConnectDB() {
-	uri := "mongodb+srv://j_db_user:BWz6VqT2GgoZBgUu@cs-web-shopping-list.q1uo6ax.mongodb.net/?appName=cs-web-shopping-list"
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	uri := os.Getenv("MONGODB_URI")
+	if uri == "" {
+		log.Fatal("MONGODB_URI not set in environment")
+	}
 
 	// connect to MongoDB
 	mongoClient, err := mongo.Connect(options.Client().ApplyURI(uri))
