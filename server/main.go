@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"net/http"
+
+	"github.com/rs/cors"
 )
 
 func ping(response http.ResponseWriter, request *http.Request) {
@@ -14,9 +16,13 @@ func main() {
 
 	ConnectDB()
 	http.HandleFunc("/products", AddProduct)
-	//http.HandleFunc("/products/list", GetProducts)
+	http.HandleFunc("/products", UpdateProduct)
+	http.HandleFunc("/products", GetProducts)
+	http.HandleFunc("/products", DeleteProduct)
 
-	err := http.ListenAndServe(":8080", nil)
+	c := cors.Default()
+	handler := c.Handler(http.DefaultServeMux)
+	err := http.ListenAndServe(":8080", handler)
 	if err != nil {
 		fmt.Println("Server error:", err)
 	}
