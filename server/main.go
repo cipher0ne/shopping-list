@@ -15,10 +15,8 @@ func main() {
 	http.HandleFunc("/ping", ping)
 
 	ConnectDB()
-	http.HandleFunc("/products", AddProduct)
-	http.HandleFunc("/products", UpdateProduct)
-	http.HandleFunc("/products", GetProducts)
-	http.HandleFunc("/products", DeleteProduct)
+	http.HandleFunc("/products", AllProductsHandler)
+	http.HandleFunc("/products/{id}", ProductHandler)
 
 	c := cors.Default()
 	handler := c.Handler(http.DefaultServeMux)

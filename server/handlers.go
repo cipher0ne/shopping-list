@@ -12,12 +12,25 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func AddProduct(response http.ResponseWriter, request *http.Request) {
-	if request.Method != http.MethodPost {
-		http.Error(response, "Method not allowed", http.StatusMethodNotAllowed)
-		return
+func AllProductsHandler(response http.ResponseWriter, request *http.Request) {
+	switch method := request.Method; method {
+	case http.MethodPost:
+		AddProduct(response, request)
+	case http.MethodGet:
+		GetProducts(response, request)
 	}
+}
 
+func ProductHandler(response http.ResponseWriter, request *http.Request) {
+	switch method := request.Method; method {
+	case http.MethodPatch:
+		UpdateProduct(response, request)
+	case http.MethodDelete:
+		DeleteProduct(response, request)
+	}
+}
+
+func AddProduct(response http.ResponseWriter, request *http.Request) {
 	var product models.Product
 	err := json.NewDecoder(request.Body).Decode(&product)
 	if err != nil {
@@ -41,11 +54,6 @@ func AddProduct(response http.ResponseWriter, request *http.Request) {
 }
 
 func GetProducts(response http.ResponseWriter, request *http.Request) {
-	if request.Method != http.MethodGet {
-		http.Error(response, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -76,11 +84,6 @@ func GetProducts(response http.ResponseWriter, request *http.Request) {
 }
 
 func UpdateProduct(response http.ResponseWriter, request *http.Request) {
-	if request.Method != http.MethodPatch {
-		http.Error(response, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	id := strings.TrimPrefix(request.URL.Path, "/products/")
 	objID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
@@ -116,11 +119,6 @@ func UpdateProduct(response http.ResponseWriter, request *http.Request) {
 }
 
 func DeleteProduct(response http.ResponseWriter, request *http.Request) {
-	if request.Method != http.MethodDelete {
-		http.Error(response, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	id := strings.TrimPrefix(request.URL.Path, "/products/")
 	objID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
