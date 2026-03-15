@@ -9,15 +9,13 @@
     all: unset;
     font-family: "MapleMono", monospace;
     cursor: pointer;
+    font-size: x-large;
 }
 
 .button:hover {
     text-decoration: underline;
 }
 
-.button
-
-#new-item-button {
-    font-size: x-large;
+.row {
+    display: flex;
 }
-
