@@ -1,0 +1,68 @@
+.productRow {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 0.5rem;
+	border-bottom: 1px solid #b4befe;
+	font-size: larger;
+	font-weight: 600;
+}
+
+.infoGroup {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+}
+
+.controls {
+	display: flex;
+	gap: 0.5rem;
+}
+
+.button {
+	all: unset;
+	cursor: pointer;
+	font-size: small;
+	color: #94e2d5;
+	font-size: large;
+	user-select: none;
+}
+
+
+.removeButton {
+	color: #f38ba8;
+}
+
+.button:hover {
+	opacity: 1;
+	text-decoration: underline;
+}
+
+.check {
+	appearance: none;
+	width: 1.2em;
+	height: 1.2em;
+	border: 2px solid #b4befe;
+	border-radius: 4px;
+	background: #1e1e2e;
+	cursor: pointer;
+	position: relative;
+	display: inline-block;
+	vertical-align: middle;
+	transition: border-color 0.2s;
+}
+
+.check:checked {
+	border-color: #a6e3a1;
+}
+
+.check:checked::after {
+	content: '';
+	position: absolute;
+	left: 0.2em;
+	width: 0.3em;
+	height: 0.6em;
+	border: solid #a6e3a1;
+	border-width: 0 0.2em 0.2em 0;
+	transform: rotate(45deg);
+}

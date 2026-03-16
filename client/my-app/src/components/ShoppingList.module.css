@@ -1,0 +1,27 @@
+.listSection {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	padding-top: 2rem;
+}
+
+.listContainer {
+	display: flex;
+	flex-direction: column;
+	gap: 1.5rem;
+	width: 100%;
+	max-width: 500px;
+}
+
+.addItemButton {
+	all: unset;
+	cursor: pointer;
+	font-size: x-large;
+    font-weight: bold;
+	color: #cba6f7;
+	text-align: center;
+}
+
+.addItemButton:hover {
+	text-decoration: underline;
+}
