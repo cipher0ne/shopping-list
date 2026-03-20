@@ -1,14 +1,19 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { Product } from "../types";
 import { ListItem } from "./ListItem";
 import { ItemForm } from "./ItemForm";
 import styles from "./ShoppingList.module.css";
 
-// Add two top-right buttons (example: Settings and Help)
-
 export function ShoppingList() {
-	const [products, setProducts] = useState<Product[]>([]);
+	const [products, setProducts] = useState<Product[]>(() => {
+		const saved = localStorage.getItem("list");
+		return saved ? JSON.parse(saved) : [];
+	});
 	const [isAdding, setIsAdding] = useState(false);
+
+	useEffect(() => {
+		localStorage.setItem("list", JSON.stringify(products));
+	}, [products])
 
 	const handleAdd = (name: string, quantity: number) => {
 		if (!name.trim()) return;
@@ -46,14 +51,16 @@ export function ShoppingList() {
 					<ItemForm onConfirm={handleAdd} onCancel={() => setIsAdding(false)} />
 				)}
 				<div className={styles.listContainer}>
-					{products.map(p => (
-						<ListItem 
-							key={p.id} 
-							product={p} 
-							onDelete={handleDelete} 
-							onUpdate={handleUpdate}
-							onToggleBought={toggleBought}
-						/>
+					{[...products]
+						.sort((a, b) => Number(a.bought) - Number(b.bought))
+						.map(p => (
+							<ListItem 
+								key={p.id} 
+								product={p} 
+								onDelete={handleDelete} 
+								onUpdate={handleUpdate}
+								onToggleBought={toggleBought}
+							/>
 					))}
 				</div>
 			</section>
