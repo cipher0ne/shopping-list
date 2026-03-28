@@ -1,0 +1,115 @@
+.container {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 100vh;
+}
+
+.authForm {
+	display: flex;
+	flex-direction: column;
+	font-size: large;
+	width: 100%;
+	max-width: 464px;
+	padding: 1rem;
+	background-color: #1e1e2e;
+	border: 2px solid #b4befe;
+	border-radius: 5px;
+}
+
+.title {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	color: #cba6f7;
+}
+
+.label {
+	margin-bottom: 4px;
+}
+
+.inputField {
+	background: transparent;
+	border: 2px solid #45475a;
+	border-radius: 4px;
+	color: #cdd6f4;
+	font-family: "MapleMono", monospace;
+	font-size: large;
+	outline: none;
+	margin-bottom: 1rem;
+	padding: 6px;
+	flex-grow: 1;
+}
+
+.inputField:focus {
+	border-color: #b4befe;
+}
+
+.buttonRow {
+	display: flex;
+	flex-direction: row;
+	gap: 1rem;
+	justify-content: center;
+}
+
+.confirmButton {
+	all: unset;
+	border: 2px solid;
+	border-radius: 4px;
+	padding: 6px;
+	border-color: #a6e3a1;
+	background-color: #a6e3a1;
+	color: #1e1e2e;
+	font-weight: bold;
+	font-size: larger;
+}
+
+.confirmButton:hover {
+	cursor: pointer;
+	border-color: #76b970;
+	background-color: #76b970;
+}
+
+.confirmButton:disabled {
+	cursor: not-allowed;
+	border-color: #a6adc8;
+	background-color: #a6adc8;
+}
+
+.cancelButton {
+	all: unset;
+	border: 2px solid;
+	border-radius: 5px;
+	padding: 6px;
+	border-color: #f38ba8;
+	background-color: #f38ba8;
+	color: #1e1e2e;
+	font-weight: bold;
+	font-size: larger;
+}
+
+.cancelButton:hover {
+	cursor: pointer;
+	border-color: #c96682;
+	background-color: #c96682;
+}
+
+.passwordRow {
+	display: flex;
+	gap: 1rem;
+	align-items: center;
+}
+
+.eyeButton {
+	all: unset;
+	cursor: pointer;
+	font-size: 1.6rem;
+	color: #a6adc8;
+	user-select: none;
+	margin-bottom: 1rem;
+}
+
+.eyeButton:hover {
+	cursor: pointer;
+	color: #cdd6f4;
+}

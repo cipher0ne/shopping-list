@@ -3,18 +3,20 @@ import styles from "./Menu.module.css";
 type MenuProps = {
 	selectedOption: string;
 	setOption: (option: string) => void;
+	setDisplayAuth: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export function Menu( { selectedOption, setOption }: MenuProps ) {
+export function Menu( { selectedOption, setOption, setDisplayAuth }: MenuProps ) {
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		setOption(e.target.value);
 	}
 
 	return (
 		<div className={styles.container}>
-			{/* <button className={styles.loginButton}>
+			<button className={styles.loginButton} onClick={() => setDisplayAuth(true)}>
 				<span className={styles.userIcon}>{"\uf007"}</span> Login
-			</button> */}
+			</button>
+
 			<label className={styles.filterLabel}>{"\uf0b0"} Filter</label>
 			<div className={styles.radioGroup}>
 				<label>
