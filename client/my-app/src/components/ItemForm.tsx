@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Product } from "../types";
-import styles from "./ItemForm.module.css";
+import styles from "./styles/ItemForm.module.css";
 
 interface ItemFormProps {
 	initialData?: Product;

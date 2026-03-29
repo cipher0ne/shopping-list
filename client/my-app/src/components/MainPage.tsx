@@ -1,13 +1,15 @@
 import { ShoppingList } from "./ShoppingList";
 import { Menu } from "./Menu"
-import styles from "./MainPage.module.css";
+import styles from "./styles/MainPage.module.css";
 import React, { useState } from "react";
 
 type MainPageProps = {
 	setDisplayAuth: React.Dispatch<React.SetStateAction<boolean>>;
+	userIsLoggedIn: boolean;
+	setUserIsLoggedIn: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export function MainPage({ setDisplayAuth }: MainPageProps) {
+export function MainPage({ setDisplayAuth, userIsLoggedIn, setUserIsLoggedIn }: MainPageProps) {
 	const [displayMenu, setDisplayMenu] = useState(false);
 
 	const toggleMenu = () => {
@@ -38,7 +40,7 @@ export function MainPage({ setDisplayAuth }: MainPageProps) {
 				{menuContent}
 			</div>
 			<h1 className={styles.title}>Shopping List</h1>
-			<ShoppingList filter={selectedOption} />
+			<ShoppingList filter={selectedOption} userIsLoggedIn={userIsLoggedIn} />
 		</main>
 	);
 }

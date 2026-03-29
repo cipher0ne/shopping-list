@@ -2,13 +2,15 @@ import { useState, useEffect } from "react";
 import type { Product} from "../types";
 import { ListItem } from "./ListItem";
 import { ItemForm } from "./ItemForm";
-import styles from "./ShoppingList.module.css";
+import styles from "./styles/ShoppingList.module.css";
 
-export function ShoppingList({ filter }: { filter: string }) {
-	const [products, setProducts] = useState<Product[]>(() => {
-		const saved = localStorage.getItem("list");
-		return saved ? JSON.parse(saved) : [];
-	});
+type ShoppingListProps = {
+	filter: string;
+	userIsLoggedIn: boolean;
+}
+
+export function ShoppingList({ filter, userIsLoggedIn }: ShoppingListProps) {
+	const [products, setProducts] = useState<Product[]>([]);
 	const [isAdding, setIsAdding] = useState(false);
 
 	const filteredProducts = products.filter(p => {
@@ -22,32 +24,152 @@ export function ShoppingList({ filter }: { filter: string }) {
 		}
 	})
 
+	// Helper to map backend product to frontend Product type
+	function mapProduct(p: any): Product {
+		return {
+			id: p._id || p.id,
+			name: p.name,
+			quantity: p.quantity,
+			bought: p.bought
+		};
+	}
+
+	// check for token and fetch products from backend if logged in
 	useEffect(() => {
-		localStorage.setItem("list", JSON.stringify(products));
-	}, [products])
+		const token = localStorage.getItem("token");
+		if (token) {
+			fetch("http://localhost:8080/products", {
+				headers: { "Authorization": `Bearer ${token}` }
+			})
+			.then(res => res.ok ? res.json() : Promise.reject())
+			.then(data => Array.isArray(data) ? setProducts(data.map(mapProduct)) : setProducts([]))
+			.catch(() => setProducts([]));
+		} else {
+			const saved = localStorage.getItem("list");
+			setProducts(saved ? JSON.parse(saved) : []);
+		}
+	}, [userIsLoggedIn]);
+
+	// save to localStorage only if not logged in
+	useEffect(() => {
+		const token = localStorage.getItem("token");
+		if (!token) {
+			localStorage.setItem("list", JSON.stringify(products));
+		}
+	}, [products]);
 
 	const handleAdd = (name: string, quantity: number) => {
 		if (!name.trim()) return;
-		const newProduct: Product = {
-			id: crypto.randomUUID(),
-			name,
-			quantity,
-			bought: false
-		};
-		setProducts([newProduct, ...products]);
-		setIsAdding(false);
+		if (userIsLoggedIn) {
+			const token = localStorage.getItem("token");
+			fetch("http://localhost:8080/products", {
+				method: "POST",
+				headers: {
+					"Authorization": `Bearer ${token}`,
+					"Content-Type": "application/json"
+				},
+				body: JSON.stringify({ name, quantity })
+			})
+			.then(res => res.ok ? res.json() : Promise.reject())
+			.then(() => {
+				// Refetch products from backend to update UI
+				fetch("http://localhost:8080/products", {
+					headers: { "Authorization": `Bearer ${token}` }
+				})
+				.then(res => res.ok ? res.json() : Promise.reject())
+				.then(data => Array.isArray(data) ? setProducts(data.map(mapProduct)) : setProducts([]));
+				setIsAdding(false);
+			})
+			.catch(() => {
+				setIsAdding(false);
+			});
+		} else {
+			const newProduct: Product = {
+				id: crypto.randomUUID(),
+				name,
+				quantity,
+				bought: false
+			};
+			setProducts([newProduct, ...products]);
+			setIsAdding(false);
+		}
 	};
 
 	const handleUpdate = (id: string, name: string, quantity: number) => {
-		setProducts(prev => prev.map(p => p.id === id ? { ...p, name, quantity } : p));
+		if (userIsLoggedIn) {
+			const token = localStorage.getItem("token");
+			fetch(`http://localhost:8080/products/${id}`, {
+				method: "PATCH",
+				headers: {
+					"Authorization": `Bearer ${token}`,
+					"Content-Type": "application/json"
+				},
+				body: JSON.stringify({ name, quantity })
+			})
+			.then(res => res.ok ? res.json() : Promise.reject())
+			.then(() => {
+				fetch("http://localhost:8080/products", {
+					headers: { "Authorization": `Bearer ${token}` }
+				})
+				.then(res => res.ok ? res.json() : Promise.reject())
+				.then(data => Array.isArray(data) ? setProducts(data.map(mapProduct)) : setProducts([]));
+			})
+			.catch(() => {/* TODO: show error */});
+		} else {
+			setProducts(prev => prev.map(p => p.id === id ? { ...p, name, quantity } : p));
+		}
 	};
 
 	const handleDelete = (id: string) => {
-		setProducts(prev => prev.filter(p => p.id !== id));
+		if (userIsLoggedIn) {
+			const token = localStorage.getItem("token");
+			fetch(`http://localhost:8080/products/${id}`, {
+				method: "DELETE",
+				headers: { "Authorization": `Bearer ${token}` }
+			})
+			.then(res => {
+				if (res.ok) {
+					return fetch("http://localhost:8080/products", {
+						headers: { "Authorization": `Bearer ${token}` }
+					})
+					.then(res => res.ok ? res.json() : Promise.reject())
+					.then(data => Array.isArray(data) ? setProducts(data.map(mapProduct)) : setProducts([]));
+				} else {
+					// TODO: show error
+				}
+			})
+			.catch(() => {/* TODO: show error */});
+		} else {
+			setProducts(prev => prev.filter(p => p.id !== id));
+		}
 	};
 
 	const toggleBought = (id: string) => {
-		setProducts(prev => prev.map(p => p.id === id ? { ...p, bought: !p.bought } : p));
+		if (userIsLoggedIn) {
+			const token = localStorage.getItem("token");
+			// Find the product to get its current bought state
+			const product = products.find(p => p.id === id);
+			if (!product) return;
+			fetch(`http://localhost:8080/products/${id}`, {
+				method: "PATCH",
+				headers: {
+					"Authorization": `Bearer ${token}`,
+					"Content-Type": "application/json"
+				},
+				body: JSON.stringify({ bought: !product.bought })
+			})
+			.then(res => res.ok ? res.json() : Promise.reject())
+			.then(() => {
+				fetch("http://localhost:8080/products", {
+					headers: { "Authorization": `Bearer ${token}` }
+				})
+				.then(res => res.ok ? res.json() : Promise.reject())
+				.then(data => Array.isArray(data) ? setProducts(data.map(mapProduct)) : setProducts([]));
+			})
+			.catch(() => {/* TODO: show error */});
+		} else {
+			setProducts(prev => prev.map(p => p.id === id ? { ...p, bought: !p.bought } : p));
+		}
 	};
 
 	return (

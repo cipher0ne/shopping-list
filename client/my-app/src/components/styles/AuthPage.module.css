@@ -62,6 +62,7 @@
 	color: #1e1e2e;
 	font-weight: bold;
 	font-size: larger;
+	user-select: none;
 }
 
 .confirmButton:hover {
@@ -86,6 +87,7 @@
 	color: #1e1e2e;
 	font-weight: bold;
 	font-size: larger;
+	user-select: none;
 }
 
 .cancelButton:hover {

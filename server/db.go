@@ -50,4 +50,6 @@ func ConnectDB() {
 
 	ShoppingListsCollection =
 		mongoClient.Database("cs-web-shopping-list").Collection("shopping_lists")
+
+	log.Println("Connected to MongoDB successfully")
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -17,24 +18,28 @@ import (
 
 // Handles /products (GET, POST)
 func AllProductsHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("[INFO] %s %s from %s", r.Method, r.URL.Path, r.RemoteAddr)
 	switch r.Method {
 	case http.MethodPost:
 		AddProduct(w, r)
 	case http.MethodGet:
 		GetProducts(w, r)
 	default:
+		log.Printf("[WARN] Method Not Allowed: %s", r.Method)
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 	}
 }
 
 // Handles /products/{id} (PATCH, DELETE)
 func ProductHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("[INFO] %s %s from %s", r.Method, r.URL.Path, r.RemoteAddr)
 	switch r.Method {
 	case http.MethodPatch:
 		UpdateProduct(w, r)
 	case http.MethodDelete:
 		DeleteProduct(w, r)
 	default:
+		log.Printf("[WARN] Method Not Allowed: %s", r.Method)
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 	}
 }
@@ -79,12 +84,19 @@ func GetUsershoppingList(userID primitive.ObjectID) (models.ShoppingList, error)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	err := ShoppingListsCollection.FindOne(ctx, bson.M{"userID": userID}).Decode(&shoppingList)
+	log.Printf("[DEBUG] Looking for shopping list with userId: %v\n", userID.Hex())
+	err := ShoppingListsCollection.FindOne(ctx, bson.M{"userId": userID}).Decode(&shoppingList)
+	if err != nil {
+		log.Printf("[DEBUG] Shopping list not found for userId: %v, error: %v\n", userID.Hex(), err)
+	} else {
+		log.Printf("[DEBUG] Found shopping list: %+v\n", shoppingList)
+	}
 	return shoppingList, err
 }
 
 func AddProduct(w http.ResponseWriter, r *http.Request) {
 	userID, err := GetUserIDFromToken(r)
+	log.Printf("[DEBUG] AddProduct: userID from token: %v\n", userID.Hex())
 	if err != nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
@@ -93,6 +105,7 @@ func AddProduct(w http.ResponseWriter, r *http.Request) {
 	// find the shopping list of this user
 	shoppingList, err := GetUsershoppingList(userID)
 	if err != nil {
+		log.Printf("[DEBUG] AddProduct: Shopping list not found for userID: %v\n", userID.Hex())
 		http.Error(w, "Shopping list not found", http.StatusNotFound)
 		return
 	}
@@ -107,12 +120,15 @@ func AddProduct(w http.ResponseWriter, r *http.Request) {
 	product.ID = primitive.NewObjectID()
 	product.ShoppingListID = shoppingList.ID
 
+	log.Printf("[DEBUG] AddProduct: Inserting product: %+v\n", product)
+
 	// insert product
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	res, err := ProductsCollection.InsertOne(ctx, product)
 	if err != nil {
+		log.Printf("[DEBUG] AddProduct: Database error: %v\n", err)
 		http.Error(w, "Database error", http.StatusInternalServerError)
 		return
 	}
@@ -125,8 +141,10 @@ func AddProduct(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetProducts(w http.ResponseWriter, r *http.Request) {
+	log.Printf("[INFO] GetProducts called by %s", r.RemoteAddr)
 	userID, err := GetUserIDFromToken(r)
 	if err != nil {
+		log.Printf("[WARN] Unauthorized access in GetProducts: %v", err)
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
@@ -134,6 +152,7 @@ func GetProducts(w http.ResponseWriter, r *http.Request) {
 	// find the shopping list of this user
 	shoppingList, err := GetUsershoppingList(userID)
 	if err != nil {
+		log.Printf("[WARN] Shopping list not found in GetProducts for userID: %v", userID.Hex())
 		http.Error(w, "Shopping list not found", http.StatusNotFound)
 		return
 	}
@@ -144,6 +163,7 @@ func GetProducts(w http.ResponseWriter, r *http.Request) {
 	// find products that belong to this user's list
 	cursor, err := ProductsCollection.Find(ctx, bson.M{"shoppingListID": shoppingList.ID})
 	if err != nil {
+		log.Printf("[ERROR] Database error in GetProducts: %v", err)
 		http.Error(w, "Database error", http.StatusInternalServerError)
 		return
 	}
@@ -151,18 +171,22 @@ func GetProducts(w http.ResponseWriter, r *http.Request) {
 
 	var products []models.Product
 	if err = cursor.All(ctx, &products); err != nil {
+		log.Printf("[ERROR] Database error in GetProducts (cursor): %v", err)
 		http.Error(w, "Database error", http.StatusInternalServerError)
 		return
 	}
 
+	log.Printf("[INFO] Returning %d products for userID: %v", len(products), userID.Hex())
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(products)
 }
 
 func UpdateProduct(w http.ResponseWriter, r *http.Request) {
+	log.Printf("[INFO] UpdateProduct called by %s", r.RemoteAddr)
 	userID, err := GetUserIDFromToken(r)
 	if err != nil {
+		log.Printf("[WARN] Unauthorized access in UpdateProduct: %v", err)
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
@@ -170,6 +194,7 @@ func UpdateProduct(w http.ResponseWriter, r *http.Request) {
 	// find the shopping list of this user
 	shoppingList, err := GetUsershoppingList(userID)
 	if err != nil {
+		log.Printf("[WARN] Shopping list not found in UpdateProduct for userID: %v", userID.Hex())
 		http.Error(w, "Shopping list not found", http.StatusNotFound)
 		return
 	}
@@ -178,6 +203,7 @@ func UpdateProduct(w http.ResponseWriter, r *http.Request) {
 	id := strings.TrimPrefix(r.URL.Path, "/products/")
 	objID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
+		log.Printf("[WARN] Invalid product ID in UpdateProduct: %v", id)
 		http.Error(w, "Invalid ID", http.StatusBadRequest)
 		return
 	}
@@ -186,6 +212,7 @@ func UpdateProduct(w http.ResponseWriter, r *http.Request) {
 	var updates map[string]any
 	err = json.NewDecoder(r.Body).Decode(&updates)
 	if err != nil {
+		log.Printf("[WARN] Invalid JSON in UpdateProduct: %v", err)
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
 	}
@@ -200,10 +227,12 @@ func UpdateProduct(w http.ResponseWriter, r *http.Request) {
 
 	res, err := ProductsCollection.UpdateOne(ctx, filter, update)
 	if err != nil {
+		log.Printf("[ERROR] Database error in UpdateProduct: %v", err)
 		http.Error(w, "Database error", http.StatusInternalServerError)
 		return
 	}
 
+	log.Printf("[INFO] Updated product %v for userID: %v, matched: %d, modified: %d", id, userID.Hex(), res.MatchedCount, res.ModifiedCount)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]any{
@@ -213,8 +242,10 @@ func UpdateProduct(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteProduct(w http.ResponseWriter, r *http.Request) {
+	log.Printf("[INFO] DeleteProduct called by %s", r.RemoteAddr)
 	userID, err := GetUserIDFromToken(r)
 	if err != nil {
+		log.Printf("[WARN] Unauthorized access in DeleteProduct: %v", err)
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
@@ -222,6 +253,7 @@ func DeleteProduct(w http.ResponseWriter, r *http.Request) {
 	// find the shopping list of this user
 	shoppingList, err := GetUsershoppingList(userID)
 	if err != nil {
+		log.Printf("[WARN] Shopping list not found in DeleteProduct for userID: %v", userID.Hex())
 		http.Error(w, "Shopping list not found", http.StatusNotFound)
 		return
 	}
@@ -230,6 +262,7 @@ func DeleteProduct(w http.ResponseWriter, r *http.Request) {
 	id := strings.TrimPrefix(r.URL.Path, "/products/")
 	objID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
+		log.Printf("[WARN] Invalid product ID in DeleteProduct: %v", id)
 		http.Error(w, "Invalid ID", http.StatusBadRequest)
 		return
 	}
@@ -242,10 +275,12 @@ func DeleteProduct(w http.ResponseWriter, r *http.Request) {
 
 	res, err := ProductsCollection.DeleteOne(ctx, filter)
 	if err != nil {
+		log.Printf("[ERROR] Database error in DeleteProduct: %v", err)
 		http.Error(w, "Database error", http.StatusInternalServerError)
 		return
 	}
 
+	log.Printf("[INFO] Deleted product %v for userID: %v, deletedCount: %d", id, userID.Hex(), res.DeletedCount)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]any{
@@ -254,12 +289,14 @@ func DeleteProduct(w http.ResponseWriter, r *http.Request) {
 }
 
 func RegisterHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("[INFO] RegisterHandler called by %s", r.RemoteAddr)
 	var req struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
 	}
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
+		log.Printf("[WARN] Invalid JSON in RegisterHandler: %v", err)
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
 	}
@@ -267,6 +304,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	// password hashing
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
+		log.Printf("[ERROR] Password hashing failed in RegisterHandler: %v", err)
 		http.Error(w, "Server error", http.StatusInternalServerError)
 		return
 	}
@@ -280,6 +318,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	// if user was found Decode will return nil error
 	err = result.Decode(&existingUser)
 	if err == nil {
+		log.Printf("[WARN] RegisterHandler: User already exists: %s", req.Email)
 		http.Error(w, "User already exists", http.StatusConflict)
 		return
 	}
@@ -292,6 +331,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	_, err = UsersCollection.InsertOne(ctx, user)
 	if err != nil {
+		log.Printf("[ERROR] Failed to insert user in RegisterHandler: %v", err)
 		http.Error(w, "Server error", http.StatusInternalServerError)
 		return
 	}
@@ -303,10 +343,12 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	_, err = ShoppingListsCollection.InsertOne(ctx, shoppingList)
 	if err != nil {
+		log.Printf("[ERROR] Failed to insert shopping list in RegisterHandler: %v", err)
 		http.Error(w, "Server error", http.StatusInternalServerError)
 		return
 	}
 
+	log.Printf("[INFO] Registered new user: %s, userID: %v", req.Email, user.ID.Hex())
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]any{
@@ -315,12 +357,14 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("[INFO] LoginHandler called by %s", r.RemoteAddr)
 	var req struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
 	}
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
+		log.Printf("[WARN] Invalid JSON in LoginHandler: %v", err)
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
 	}
@@ -332,6 +376,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	var user models.User
 	err = UsersCollection.FindOne(ctx, bson.M{"email": req.Email}).Decode(&user)
 	if err != nil {
+		log.Printf("[WARN] Invalid email in LoginHandler: %s", req.Email)
 		http.Error(w, "Invalid email or password", http.StatusUnauthorized)
 		return
 	}
@@ -339,6 +384,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	// compare password with hashed password in the database
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password))
 	if err != nil {
+		log.Printf("[WARN] Invalid password in LoginHandler for email: %s", req.Email)
 		http.Error(w, "Invalid email or password", http.StatusUnauthorized)
 		return
 	}
@@ -350,10 +396,12 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	})
 	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))
 	if err != nil {
+		log.Printf("[ERROR] Failed to sign JWT in LoginHandler: %v", err)
 		http.Error(w, "Server error", http.StatusInternalServerError)
 		return
 	}
 
+	log.Printf("[INFO] User logged in: %s, userID: %v", req.Email, user.ID.Hex())
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]any{

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { Product } from "../types";
 import { ItemForm } from "./ItemForm";
-import styles from "./ListItem.module.css";
+import styles from "./styles/ListItem.module.css";
 
 interface ListItemProps {
 	product: Product;
