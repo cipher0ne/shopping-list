@@ -12,7 +12,6 @@ function App() {
 	if (displayAuth) {
 		content = 	<AuthPage
 						setDisplayAuth={setDisplayAuth}
-						userIsLoggedIn={userIsLoggedIn}
 						setUserIsLoggedIn={setUserIsLoggedIn}
 					/>
 	} else {

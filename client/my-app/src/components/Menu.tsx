@@ -4,19 +4,47 @@ type MenuProps = {
 	selectedOption: string;
 	setOption: (option: string) => void;
 	setDisplayAuth: React.Dispatch<React.SetStateAction<boolean>>;
+	userIsLoggedIn: boolean;
+	setUserIsLoggedIn: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export function Menu( { selectedOption, setOption, setDisplayAuth }: MenuProps ) {
+export function Menu({
+	selectedOption,
+	setOption,
+	setDisplayAuth,
+	userIsLoggedIn,
+	setUserIsLoggedIn
+}: MenuProps) {
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		setOption(e.target.value);
 	}
 
+	let userLabel = "";
+	if (userIsLoggedIn) {
+		const email = localStorage.getItem("email") || "";
+		userLabel = email.split("@")[0];
+	}
+
+	const handleLoginLogout = () => {
+		if (userIsLoggedIn) {
+			setUserIsLoggedIn(false);
+			localStorage.removeItem("email");
+			localStorage.removeItem("token");
+			localStorage.setItem("isRegistered", "true");
+		} else {
+			setDisplayAuth(true);
+		}
+	};
+
 	return (
 		<div className={styles.container}>
-			<button className={styles.loginButton} onClick={() => setDisplayAuth(true)}>
-				<span className={styles.userIcon}>{"\uf007"}</span> Login
+			<label>
+				{userIsLoggedIn ? userLabel : null}
+			</label>
+			<button className={styles.loginButton} onClick={handleLoginLogout}>
+				<span className={styles.userIcon}>{"\uf007"}</span>{" "}
+				{userIsLoggedIn ? "Log out" : "Log in"}
 			</button>
-
 			<label className={styles.filterLabel}>{"\uf0b0"} Filter</label>
 			<div className={styles.radioGroup}>
 				<label>

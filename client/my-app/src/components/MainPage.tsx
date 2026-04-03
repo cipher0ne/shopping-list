@@ -25,6 +25,8 @@ export function MainPage({ setDisplayAuth, userIsLoggedIn, setUserIsLoggedIn }: 
 				selectedOption={selectedOption}
 				setOption={setOption}
 				setDisplayAuth={setDisplayAuth}
+				userIsLoggedIn={userIsLoggedIn}
+				setUserIsLoggedIn={setUserIsLoggedIn}
 			/>
 		)
 	} else {

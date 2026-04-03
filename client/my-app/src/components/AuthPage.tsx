@@ -57,7 +57,8 @@ export function AuthPage({ setDisplayAuth, setUserIsLoggedIn }: AuthDisplayProps
 		if (result.success) {
 			localStorage.setItem("isRegistered", "true");
 			setRegistered(true);
-			alert("Registration successful! Please sign in.");
+			setPassword("");
+			setRePassword("");
 		} else {
 			alert(result.message || "Registration failed");
 		}
@@ -73,7 +74,8 @@ export function AuthPage({ setDisplayAuth, setUserIsLoggedIn }: AuthDisplayProps
 
 	useEffect(() => {
 		const validEmail 		= emailRegex.test(email);
-		const passwordLength 	= password.length >= 12;
+		const passwordLength 	= password.length >= 12 &&
+								  new TextEncoder().encode(password).length <= 72;
 		const hasLowerCase		= /[a-z]/.test(password);
 		const hasUpperCase		= /[A-Z]/.test(password);
 		const hasNumber 		= /\d/.test(password);
@@ -103,6 +105,7 @@ export function AuthPage({ setDisplayAuth, setUserIsLoggedIn }: AuthDisplayProps
 	let title;
 	let repeatPassword;
 	let confirmButton;
+	let signButton;
 
 	if (isRegistered) {
 		title = <h2 className={styles.title}>Sign in</h2>;
@@ -118,6 +121,7 @@ export function AuthPage({ setDisplayAuth, setUserIsLoggedIn }: AuthDisplayProps
 					setLoading(false);
 					if (result.success && result.token) {
 						localStorage.setItem("token", result.token);
+						localStorage.setItem("email", email); // Store email for Menu
 						setUserIsLoggedIn(true);
 						setDisplayAuth(false);
 					} else {
@@ -126,6 +130,11 @@ export function AuthPage({ setDisplayAuth, setUserIsLoggedIn }: AuthDisplayProps
 				}}
 			>
 				{loading ? "Signing in..." : "Sign in"}
+			</button>
+		);
+		signButton = (
+			<button className={styles.signButton} onClick={() => setRegistered(false)}>
+				Sign up
 			</button>
 		);
 	} else {
@@ -137,6 +146,7 @@ export function AuthPage({ setDisplayAuth, setUserIsLoggedIn }: AuthDisplayProps
 					className={styles.inputField}
 					type={showPassword ? "text" : "password"}
 					onChange={(e) => setRePassword(e.target.value.trim())}
+					defaultValue={rePassword}
 				/>
 			</>
 		);
@@ -152,6 +162,11 @@ export function AuthPage({ setDisplayAuth, setUserIsLoggedIn }: AuthDisplayProps
 				disabled={!canConfirm || loading}
 			>
 				{loading ? "Signing up..." : "Sign up"}
+			</button>
+		);
+		signButton = (
+			<button className={styles.signButton} onClick={() => setRegistered(true)}>
+				Sign in
 			</button>
 		);
 	}
@@ -174,6 +189,7 @@ export function AuthPage({ setDisplayAuth, setUserIsLoggedIn }: AuthDisplayProps
 						className={styles.inputField}
 						type={showPassword ? "text" : "password"}
 						onChange={(e) => setPassword(e.target.value.trim())}
+						defaultValue={rePassword}
 					/>
 					<button
 						className={styles.eyeButton}
@@ -194,6 +210,7 @@ export function AuthPage({ setDisplayAuth, setUserIsLoggedIn }: AuthDisplayProps
 					</button>
 					{confirmButton}
 				</div>
+				{signButton}
 			</section>
 		</div>
 	);

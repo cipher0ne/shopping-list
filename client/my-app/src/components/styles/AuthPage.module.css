@@ -50,6 +50,7 @@
 	flex-direction: row;
 	gap: 1rem;
 	justify-content: center;
+	margin-bottom: 1rem;
 }
 
 .confirmButton {
@@ -118,4 +119,14 @@
 .eyeButton:hover {
 	cursor: pointer;
 	color: #cdd6f4;
+}
+
+.signButton {
+	all: unset;
+	cursor: pointer;
+	text-align: center;
+}
+
+.signButton:hover {
+	text-decoration: underline;
 }
